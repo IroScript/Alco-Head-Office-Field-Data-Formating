@@ -86,29 +86,31 @@ def process_excel(input_filepath, output_dir):
                 if is_summary_row(prev_row): continue
                 if prev_row['f_sim'] is not None: continue
 
-                if prev_row['row_num'] == 232:
-                    prev_row['f_sim']='SH'; prev_row['g_sim']=None
-                    prev_row['h_sim']=None; prev_row['i_sim']=None; continue
-                if prev_row['row_num'] == 409:
-                    prev_row['f_sim']='sh'; prev_row['g_sim']='ASM'
-                    prev_row['h_sim']='Rajshahi'
-                    prev_row['i_sim']=shift_formula(rows[409]['e_formula'],409-410); continue
-                if prev_row['row_num'] == 493:
-                    prev_row['f_sim']='Vacant '; prev_row['g_sim']='FM'
-                    prev_row['h_sim']='Savar+Dhamrai-A'; prev_row['i_sim']='=I492+I489'; continue
-                if prev_row['row_num'] == 494:
-                    prev_row['f_sim']='Vacant '; prev_row['g_sim']='FM'
-                    prev_row['h_sim']='Savar+Dhamrai-A'; prev_row['i_sim']='=I493+I490'; continue
-                if prev_row['row_num'] == 496:
-                    prev_row['f_sim']='Vacant '; prev_row['g_sim']='FM'
-                    prev_row['h_sim']='Savar+Dhamrai-A'; prev_row['i_sim']='=I495+I492'; continue
-                if prev_row['row_num'] == 497:
-                    prev_row['f_sim']='Vacant '; prev_row['g_sim']='FM'
-                    prev_row['h_sim']='Savar+Dhamrai-A'; prev_row['i_sim']='=I496+I493'; continue
+                f_val = mgr_name
+                g_val = mgr_desig
+                h_val = mgr_market
 
-                prev_row['f_sim'] = mgr_name
-                prev_row['g_sim'] = mgr_desig
-                prev_row['h_sim'] = mgr_market
+                mgr_name_str = str(mgr_name).strip() if mgr_name is not None else ""
+                mgr_desig_str = str(mgr_desig).strip().upper() if mgr_desig is not None else ""
+                ff_desig_str = str(prev_row['c']).strip().upper() if prev_row['c'] is not None else ""
+
+                if mgr_name_str.upper() == 'VACANT':
+                    if mgr_desig_str == 'SH':
+                        f_val = 'SH'
+                    else:
+                        f_val = f"Vacant, {mgr_market}"
+                elif mgr_desig_str in ['ASM', 'RSM', 'SR.RSM', 'SR.ASM', 'ARM']:
+                    if "Nahid Reaz Karim" in mgr_name_str:
+                        f_val = "ARM, Raj.A"
+                    else:
+                        f_val = 'SH'
+
+                if ff_desig_str == 'SURVEYOR':
+                    f_val = 'HO'
+
+                prev_row['f_sim'] = f_val
+                prev_row['g_sim'] = g_val
+                prev_row['h_sim'] = h_val
                 if str(row['e_formula']).startswith('='):
                     prev_row['i_sim'] = shift_formula(row['e_formula'], j-idx)
                 else:
