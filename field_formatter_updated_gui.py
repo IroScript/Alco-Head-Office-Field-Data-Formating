@@ -126,7 +126,7 @@ def process_excel(input_filepath, output_dir):
                     else:
                         f_val = f"Vacant, {mgr_market}"
                 else:
-                    if is_zonal_head:
+                    if is_zonal_head and mgr_desig_str in ['ASM', 'RSM', 'SR.RSM', 'SR.ASM', 'ARM', 'SH']:
                         f_val = 'SH'
                     elif mgr_desig_str in ['ASM', 'RSM', 'SR.RSM', 'SR.ASM', 'ARM']:
                         clean_market = str(mgr_market)
