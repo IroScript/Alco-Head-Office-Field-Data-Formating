@@ -61,6 +61,29 @@ def process_excel(input_filepath, output_dir):
             return f"I{int(match.group(2)) + offset}"
         return re.sub(r'([eE])(\d+)', replace_func, str(formula))
 
+    # ── IDENTIFY ZONAL HEADS (SECTOR HEADS) ──
+    # The Sector Head is the manager at the very bottom of a zone block.
+    zones = []
+    current_zone_start = 0
+    for r in range(len(rows)):
+        a_str = str(rows[r]['a']).strip() if rows[r]['a'] is not None else ""
+        if a_str.startswith("Zone") or a_str.startswith("Depot"):
+            if current_zone_start != r:
+                zones.append((current_zone_start, r))
+            current_zone_start = r
+    zones.append((current_zone_start, len(rows)))
+
+    zonal_heads_by_row = {}
+    for start_idx, end_idx in zones:
+        zonal_head_name = None
+        for r in range(end_idx - 1, start_idx - 1, -1):
+            if is_manager_row(rows[r]):
+                zonal_head_name = str(rows[r]['b']).strip() if rows[r]['b'] else ""
+                break
+        
+        for r in range(start_idx, end_idx):
+            zonal_heads_by_row[r] = zonal_head_name
+
     for idx, row in enumerate(rows):
         if is_manager_row(row):
             mgr_name  = row['b']
@@ -93,17 +116,26 @@ def process_excel(input_filepath, output_dir):
                 mgr_name_str = str(mgr_name).strip() if mgr_name is not None else ""
                 mgr_desig_str = str(mgr_desig).strip().upper() if mgr_desig is not None else ""
                 ff_desig_str = str(prev_row['c']).strip().upper() if prev_row['c'] is not None else ""
+                
+                zonal_head = zonal_heads_by_row.get(j)
+                is_zonal_head = (zonal_head and mgr_name_str == zonal_head and mgr_name_str.upper() != 'VACANT')
 
                 if mgr_name_str.upper() == 'VACANT':
                     if mgr_desig_str == 'SH':
                         f_val = 'SH'
                     else:
                         f_val = f"Vacant, {mgr_market}"
-                elif mgr_desig_str in ['ASM', 'RSM', 'SR.RSM', 'SR.ASM', 'ARM']:
-                    if "Nahid Reaz Karim" in mgr_name_str:
-                        f_val = "ARM, Raj.A"
-                    else:
+                else:
+                    if is_zonal_head:
                         f_val = 'SH'
+                    elif mgr_desig_str in ['ASM', 'RSM', 'SR.RSM', 'SR.ASM', 'ARM']:
+                        clean_market = str(mgr_market)
+                        if "(RSM)" in clean_market: clean_market = clean_market.replace("(RSM)", "").strip()
+                        if "(ARM)" in clean_market: clean_market = clean_market.replace("(ARM)", "").strip()
+                        if "Nahid Reaz Karim" in mgr_name_str and "Rajshahi" in clean_market:
+                            clean_market = clean_market.replace("Rajshahi", "Raj")
+                        
+                        f_val = f"{mgr_desig}, {clean_market}"
 
                 if ff_desig_str == 'SURVEYOR':
                     f_val = 'HO'
